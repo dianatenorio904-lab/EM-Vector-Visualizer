@@ -16,10 +16,11 @@ op = st.sidebar.selectbox(
 )
 
 st.sidebar.subheader("Equations (Use x, y, z)")
+st.sidebar.caption("💡 Tip: Write exponential functions simply as 'exp()', multiplication as '*', and powers as '**'.")
 
-# Textbook input fields
+# Fixed the default string equation to use clean, simple syntax without sp. prefixes
 if op == "Gradient (∇f)":
-    user_eq = st.sidebar.text_input("f(x, y) or f(x, y, z) =", "7*x*y / sp.exp(x**2 + y**2)")
+    user_eq = st.sidebar.text_input("f(x, y) or f(x, y, z) =", "7*x*y / exp(x**2 + y**2)")
 else:
     eq_x = st.sidebar.text_input("Fx =", "-y")
     eq_y = st.sidebar.text_input("Fy =", "x")
@@ -30,17 +31,24 @@ val_x = st.sidebar.number_input("Marker X position:", value=1.0)
 val_y = st.sidebar.number_input("Marker Y position:", value=1.0)
 val_z = st.sidebar.number_input("Marker Z position:", value=0.0)
 
-# Gridlines mapping slider (matches the 'Number of Gridlines' input in your photo)
+# Gridlines mapping slider
 gridlines = st.sidebar.slider("Number of Gridlines", 10, 50, 31)
 
 # Initialize variables for the symbolic calculus engine
 x, y, z = sp.symbols('x y z')
 
+# FIXED: Provide a local dictionary mapping to safely translate clean text strings into SymPy modules
+safe_dict = {
+    "x": x, "y": y, "z": z,
+    "exp": sp.exp, "sin": sp.sin, "cos": sp.cos, "sqrt": sp.sqrt, "pi": sp.pi
+}
+
 st.header("📖 Analytical Step-by-Step Solution")
 
 try:
     if op == "Gradient (∇f)":
-        my_function = sp.sympify(user_eq)
+        # Pass our safe dictionary into sympify to handle clean math inputs
+        my_function = sp.sympify(user_eq, locals=safe_dict)
         
         # Calculate partial derivatives across all axes
         g_x = sp.diff(my_function, x)
@@ -64,14 +72,13 @@ try:
         st.write(f"**Step 3: Evaluate vector values at coordinate point ({val_x}, {val_y}, {val_z}):**")
         st.latex(rf"\nabla f|_{{point}} = \mathbf{{\left[ {ans_x},\, {ans_y},\, {ans_z} \right]}}")
 
-        # FIXED: Substitute z variable first before mapping the 2D grid plane coordinates
         flattened_function = my_function.subs(z, val_z)
         z_mesh_func = sp.lambdify((x, y), flattened_function, 'numpy')
 
     elif op == "Divergence (∇ · F)":
-        f_x = sp.sympify(eq_x)
-        f_y = sp.sympify(eq_y)
-        f_z = sp.sympify(eq_z)
+        f_x = sp.sympify(eq_x, locals=safe_dict)
+        f_y = sp.sympify(eq_y, locals=safe_dict)
+        f_z = sp.sympify(eq_z, locals=safe_dict)
         
         d_x = sp.diff(f_x, x)
         d_y = sp.diff(f_y, y)
@@ -88,14 +95,13 @@ try:
         st.write(f"**Step 3: Evaluate scalar scale magnitude at point ({val_x}, {val_y}, {val_z}):**")
         st.latex(rf"\nabla \cdot \mathbf{{F}}|_{{point}} = \mathbf{{{div_ans}}}")
         
-        # FIXED: Substitute z variable first to lock execution parameters
         flattened_function = total_div.subs(z, val_z)
         z_mesh_func = sp.lambdify((x, y), flattened_function, 'numpy')
 
     elif op == "Curl (∇ × F)":
-        f_x = sp.sympify(eq_x)
-        f_y = sp.sympify(eq_y)
-        f_z = sp.sympify(eq_z)
+        f_x = sp.sympify(eq_x, locals=safe_dict)
+        f_y = sp.sympify(eq_y, locals=safe_dict)
+        f_z = sp.sympify(eq_z, locals=safe_dict)
         
         c_x = sp.diff(f_z, y) - sp.diff(f_y, z)
         c_y = sp.diff(f_x, z) - sp.diff(f_z, x)
@@ -114,7 +120,6 @@ try:
         st.write(f"**Step 3: Evaluate rotation vectors at point ({val_x}, {val_y}, {val_z}):**")
         st.latex(rf"\nabla \times \mathbf{{F}}|_{{point}} = \mathbf{{\left[ {ans_x},\, {ans_y},\, {ans_z} \right]}}")
         
-        # FIXED: Substitute z variable first to prevent matrix compilation crashes
         flattened_function = c_z.subs(z, val_z)
         z_mesh_func = sp.lambdify((x, y), flattened_function, 'numpy')
 
@@ -161,4 +166,4 @@ try:
     st.plotly_chart(my_plot, use_container_width=True)
 
 except Exception as math_parse_error:
-    st.error(f"❌ Input Equation Syntax Error. Remember to use 'sp.exp()' for exponents, '*' for multiplication (e.g. 2*x) and '**' for powers (e.g. x**2). Technical Details: {math_parse_error}")
+    st.error(f"❌ Input Equation Syntax Error. Remember to use standard terms like 'exp()' for exponents, '*' for multiplication (e.g. 2*x) and '**' for powers (e.g. x**2). Technical Details: {math_parse_error}")
