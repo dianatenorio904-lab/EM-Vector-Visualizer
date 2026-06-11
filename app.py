@@ -219,5 +219,4 @@ else:
         my_plot.add_trace(go.Scatter(
             x=[xi, xi + ui * scale],
             y=[yi, yi + vi * scale],
-            mode='lines',
-        )
+            mode='lines')
