@@ -4,7 +4,7 @@ import plotly.graph_objects as go
 import sympy as sp
 
 st.set_page_config(page_title="EM Vector Tool", layout="wide")
-st.title("⚡ EE Project: Advanced Interactive Vector Calculus Tool")
+st.title("Electromagnetics: Vector Calculus Visualizer")
 st.write("Solve and map Gradient, Divergence, and Curl equations with step-by-step solutions and 3D Surface Mesh plots.")
 
 # Sidebar setup for user input variables
@@ -16,7 +16,7 @@ op = st.sidebar.selectbox(
 )
 
 st.sidebar.subheader("Equations (Use x, y, z)")
-st.sidebar.caption("💡 Tip: Write exponential functions simply as 'exp()', multiplication as '*', and powers as '**'.")
+st.sidebar.caption("Tip: Write exponential functions simply as 'exp()', multiplication as '*', and powers as '**'.")
 
 # Fixed the default string equation to use clean, simple syntax without sp. prefixes
 if op == "Gradient (∇f)":
@@ -43,7 +43,7 @@ safe_dict = {
     "exp": sp.exp, "sin": sp.sin, "cos": sp.cos, "sqrt": sp.sqrt, "pi": sp.pi
 }
 
-st.header("📖 Analytical Step-by-Step Solution")
+st.header("Step-by-Step Solution")
 
 try:
     if op == "Gradient (∇f)":
@@ -124,7 +124,7 @@ try:
         z_mesh_func = sp.lambdify((x, y), flattened_function, 'numpy')
 
     # --- 3D SURFACE MESH GRAPH ENGINE ---
-    st.header("🌐 Interactive 3D Surface Visualization")
+    st.header("3D Surface Visualization")
     
     limit = 3.0
     x_range = np.linspace(-limit, limit, gridlines)
