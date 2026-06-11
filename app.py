@@ -224,3 +224,4 @@ else:
     
     my_plot.update_layout(
         xaxis=dict(title='X Axis', range=[-limit-0.5, limit+0.5]),
+    )
