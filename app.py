@@ -203,4 +203,4 @@ try:
     
     my_plot.update_layout(
         scene=dict(
-            xaxis=dict(title='X Axis', backgroundcolor="white", gridcolor="lightgray")))
+            xaxis=dict(title='X Axis', backgroundcolor="white", gridcolor="lightgray"))
