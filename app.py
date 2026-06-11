@@ -1,11 +1,10 @@
 import streamlit as st
 import numpy as np
 import plotly.graph_objects as go
-import plotly.figure_factory as ff
 import sympy as sp
 
 st.set_page_config(page_title="EM Vector Tool", layout="wide")
-st.title("Electromagnetics Project: Interactive Vector Calculus Visualizer")
+st.title("Electromagnetics: Interactive Vector Calculus Visualizer")
 st.write("Solve and map Gradient, Divergence, and Curl formulas using interactive 2D or 3D viewports.")
 
 # Sidebar setup for user input variables
@@ -16,7 +15,7 @@ view_mode = st.sidebar.radio("Select View Mode:", ["2D Plane (X-Y)", "3D Space (
 
 op = st.sidebar.selectbox(
     "Select Operation:",
-     ["Gradient (∇f)", "Divergence (∇ · F)", "Curl (∇ × F)"]
+    ["Gradient (∇f)", "Divergence (∇ · F)", "Curl (∇ × F)"]
 )
 
 st.sidebar.subheader("Equations")
@@ -142,7 +141,6 @@ try:
             v_calc = sp.lambdify((x, y, z), c_y, 'numpy')
             w_calc = sp.lambdify((x, y, z), c_z, 'numpy')
         else:
-            # 2D curl only has a k-component (rotation along the flat surface plane)
             c_z = sp.diff(f_y, x) - sp.diff(f_x, y)
             st.latex(rf"\text{{2D Vector Field: }} \mathbf{{F}} = \left[ {sp.latex(f_x)},\, {sp.latex(f_y)} \right]")
             st.write("**Step 1: Calculate the out-of-plane planar rotation component (Z-axis rotation)**")
@@ -150,7 +148,7 @@ try:
             ans_z = c_z.subs({x: val_x, y: val_y})
             st.write(f"**Step 2: Solve magnitude of rotation at point ({val_x}, {val_y})**")
             st.latex(rf"\text{{Curl}}_z|_{{point}} = \mathbf{{{ans_z}}}")
-            u_calc = sp.lambdify((x, y), f_x, 'numpy') # Map original field directions for 2D visualization flow
+            u_calc = sp.lambdify((x, y), f_x, 'numpy') 
             v_calc = sp.lambdify((x, y), f_y, 'numpy')
 
     # Graph plotting starts here
@@ -191,10 +189,17 @@ try:
         st.plotly_chart(my_plot, use_container_width=True)
         
     else:
-        # Create a dense 2D plane grid for the custom quiver layout
+        # 2D stable layout using a pure Graph Objects line-based vector mapping
         x_space = np.linspace(-limit, limit, arrows * 2)
         y_space = np.linspace(-limit, limit, arrows * 2)
         X, Y = np.meshgrid(x_space, y_space)
         
         U = np.array(u_calc(X, Y), dtype=float)
         V = np.array(v_calc(X, Y), dtype=float)
+        
+        if U.ndim == 0: U = np.full_like(X, U)
+        if V.ndim == 0: V = np.full_like(Y, V)
+        
+        # Flatten out grid layout coordinates
+        xf, yf = X.flatten(), Y.flatten()
+        uf, vf = U.flatten(), V.flatten()
