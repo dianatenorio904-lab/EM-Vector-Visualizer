@@ -17,7 +17,7 @@ op = st.sidebar.selectbox(
 
 st.sidebar.subheader("Equations (Use x, y, z)")
 
-# Restored the clean textbook input fields
+# Textbook input fields
 if op == "Gradient (∇f)":
     user_eq = st.sidebar.text_input("f(x, y) or f(x, y, z) =", "7*x*y / sp.exp(x**2 + y**2)")
 else:
@@ -64,8 +64,9 @@ try:
         st.write(f"**Step 3: Evaluate vector values at coordinate point ({val_x}, {val_y}, {val_z}):**")
         st.latex(rf"\nabla f|_{{point}} = \mathbf{{\left[ {ans_x},\, {ans_y},\, {ans_z} \right]}}")
 
-        # Compile the main function directly for the 3D surface plot mapping
-        z_mesh_func = sp.lambdify((x, y), my_function, 'numpy')
+        # FIXED: Substitute z variable first before mapping the 2D grid plane coordinates
+        flattened_function = my_function.subs(z, val_z)
+        z_mesh_func = sp.lambdify((x, y), flattened_function, 'numpy')
 
     elif op == "Divergence (∇ · F)":
         f_x = sp.sympify(eq_x)
@@ -87,8 +88,9 @@ try:
         st.write(f"**Step 3: Evaluate scalar scale magnitude at point ({val_x}, {val_y}, {val_z}):**")
         st.latex(rf"\nabla \cdot \mathbf{{F}}|_{{point}} = \mathbf{{{div_ans}}}")
         
-        # Map the net field divergence magnitude across the plane
-        z_mesh_func = sp.lambdify((x, y), total_div, 'numpy')
+        # FIXED: Substitute z variable first to lock execution parameters
+        flattened_function = total_div.subs(z, val_z)
+        z_mesh_func = sp.lambdify((x, y), flattened_function, 'numpy')
 
     elif op == "Curl (∇ × F)":
         f_x = sp.sympify(eq_x)
@@ -112,19 +114,19 @@ try:
         st.write(f"**Step 3: Evaluate rotation vectors at point ({val_x}, {val_y}, {val_z}):**")
         st.latex(rf"\nabla \times \mathbf{{F}}|_{{point}} = \mathbf{{\left[ {ans_x},\, {ans_y},\, {ans_z} \right]}}")
         
-        # Map out the z-component loop intensity across the canvas
-        z_mesh_func = sp.lambdify((x, y), c_z, 'numpy')
+        # FIXED: Substitute z variable first to prevent matrix compilation crashes
+        flattened_function = c_z.subs(z, val_z)
+        z_mesh_func = sp.lambdify((x, y), flattened_function, 'numpy')
 
-    # --- 3D SURFACE MESH GRAPH ENGINE (MATCHES YOUR PHOTO STYLE) ---
+    # --- 3D SURFACE MESH GRAPH ENGINE ---
     st.header("🌐 Interactive 3D Surface Visualization")
     
-    # Generate spatial boundaries for X and Y mesh grids
     limit = 3.0
     x_range = np.linspace(-limit, limit, gridlines)
     y_range = np.linspace(-limit, limit, gridlines)
     X, Y = np.meshgrid(x_range, y_range)
     
-    # Compute the height grid coordinates (Z)
+    # Compute numerical matrices safely
     Z = np.array(z_mesh_func(X, Y), dtype=float)
     if Z.ndim == 0: 
         Z = np.full_like(X, Z)
@@ -132,15 +134,15 @@ try:
     # Build the 3D grid surface mesh plot trace
     my_plot = go.Figure(data=[go.Surface(
         x=X, y=Y, z=Z,
-        colorscale='Geyser', # Renders a color distribution style matching your photo
+        colorscale='Geyser', 
         contours=dict(
             x=dict(show=True, color="black", width=1, project=dict(x=False)),
             y=dict(show=True, color="black", width=1, project=dict(y=False))
         ),
-        lighting=dict(ambient=0.7, roughness=0.1) # Soft matte shading look
+        lighting=dict(ambient=0.7, roughness=0.1) 
     )])
     
-    # Place evaluate point marker floating in the 3D graph universe
+    # Place evaluation marker dot floating inside the mesh grid ecosystem
     eval_z_val = float(z_mesh_func(val_x, val_y))
     my_plot.add_trace(go.Scatter3d(
         x=[val_x], y=[val_y], z=[eval_z_val], mode='markers',
