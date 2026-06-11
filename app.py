@@ -15,76 +15,29 @@ op = st.sidebar.selectbox(
     ["Gradient (∇f)", "Divergence (∇ · F)", "Curl (∇ × F)"]
 )
 
-st.sidebar.subheader("Equation Selection Method")
-input_method = st.sidebar.radio("Choose Input Style:", ["Choose from Textbook Examples", "Type Custom Equation"])
+st.sidebar.subheader("Equations (Use x, y, z)")
+st.sidebar.caption("💡 Tip: Write exponential functions simply as 'exp()', multiplication as '*', and powers as '**'.")
 
-# Smart math text formatter helper function
-def format_user_string(input_str):
-    """Automatically converts standard textbook math shorthand into clear explicit syntax."""
-    # Handle implicit multiplication cases commonly typed by users
-    input_str = input_str.replace("xy", "x*y").replace("xz", "x*z").replace("yz", "y*z")
-    input_str = input_str.replace("2x", "2*x").replace("3x", "3*x").replace("4x", "4*x").replace("7x", "7*x").replace("8x", "8*x")
-    input_str = input_str.replace("2y", "2*y").replace("3y", "3*y").replace("2z", "2*z")
-    return input_str
-
-# -------------------------------------------------------------
-# DYNAMIC DROP-DOWN MENUS WITH PRESET PROBLEMS
-# -------------------------------------------------------------
+# Fixed the default string equation to use clean, simple syntax without sp. prefixes
 if op == "Gradient (∇f)":
-    if input_method == "Choose from Textbook Examples":
-        preset = st.sidebar.selectbox(
-            "Select Example Problem:",
-            [
-                "Example 1: Wavy Waveform (7xy / exp(x^2 + y^2))",
-                "Example 2: Paraboloid Basin (x^2 + y^2 - z)",
-                "Example 3: Electric Field Potential (1 / sqrt(x^2 + y^2 + z^2 + 0.1))",
-                "Example 4: Sinusoidal Grid Slices (sin(x) * cos(y))"
-            ]
-        )
-        if "Example 1" in preset: user_eq = "7*x*y / exp(x^2 + y^2)"
-        elif "Example 2" in preset: user_eq = "x^2 + y^2 - z"
-        elif "Example 3" in preset: user_eq = "1 / sqrt(x^2 + y^2 + z^2 + 0.1)"
-        else: user_eq = "sin(x) * cos(y)"
-    else:
-        st.sidebar.caption("💡 Guide: You can now use standard textbook notation like '^' for powers and ordinary terms like '8xy'.")
-        raw_eq = st.sidebar.text_input("f(x, y, z) =", "7*x*y / exp(x^2 + y^2)")
-        user_eq = format_user_string(raw_eq)
-
-else: # Divergence and Curl Fields
-    if input_method == "Choose from Textbook Examples":
-        preset = st.sidebar.selectbox(
-            "Select Example Problem Field:",
-            [
-                "Field A: Rotational Magnetic Vortex (Fx=-y, Fy=x, Fz=0)",
-                "Field B: Outward Exploding Electric Field (Fx=x, Fy=y, Fz=z)",
-                "Field C: Solenoidal Flow field (Fx=sin(y), Fy=cos(x), Fz=0)",
-                "Field D: Polynomial Sample (Fx=8xy, Fy=2zx^2, Fz=-10x)"
-            ]
-        )
-        if "Field A" in preset: eq_x, eq_y, eq_z = "-y", "x", "0"
-        elif "Field B" in preset: eq_x, eq_y, eq_z = "x", "y", "z"
-        elif "Field C" in preset: eq_x, eq_y, eq_z = "sin(y)", "cos(x)", "0"
-        else: eq_x, eq_y, eq_z = "8*x*y", "2*z*x^2", "-10*x"
-    else:
-        st.sidebar.caption("💡 Guide: You can now use standard textbook notation like '^' for powers and ordinary terms like '8xy'.")
-        raw_x = st.sidebar.text_input("Fx =", "-y")
-        raw_y = st.sidebar.text_input("Fy =", "x")
-        raw_z = st.sidebar.text_input("Fz =", "0")
-        eq_x = format_user_string(raw_x)
-        eq_y = format_user_string(raw_y)
-        eq_z = format_user_string(raw_z)
+    user_eq = st.sidebar.text_input("f(x, y) or f(x, y, z) =", "7*x*y / exp(x**2 + y**2)")
+else:
+    eq_x = st.sidebar.text_input("Fx =", "-y")
+    eq_y = st.sidebar.text_input("Fy =", "x")
+    eq_z = st.sidebar.text_input("Fz =", "0")
 
 st.sidebar.subheader("Point Evaluation Marker")
 val_x = st.sidebar.number_input("Marker X position:", value=1.0)
 val_y = st.sidebar.number_input("Marker Y position:", value=1.0)
 val_z = st.sidebar.number_input("Marker Z position:", value=0.0)
 
+# Gridlines mapping slider
 gridlines = st.sidebar.slider("Number of Gridlines", 10, 50, 31)
 
 # Initialize variables for the symbolic calculus engine
 x, y, z = sp.symbols('x y z')
 
-# Provide a dictionary mapping to safely translate raw strings into SymPy modules
+# FIXED: Provide a local dictionary mapping to safely translate clean text strings into SymPy modules
 safe_dict = {
     "x": x, "y": y, "z": z,
     "exp": sp.exp, "sin": sp.sin, "cos": sp.cos, "sqrt": sp.sqrt, "pi": sp.pi
@@ -94,10 +47,10 @@ st.header("📖 Analytical Step-by-Step Solution")
 
 try:
     if op == "Gradient (∇f)":
-        # FIXED: convert_xor=True turns standard ^ symbols into proper python exponents under the hood
-        my_function = sp.sympify(user_eq, locals=safe_dict, convert_xor=True)
+        # Pass our safe dictionary into sympify to handle clean math inputs
+        my_function = sp.sympify(user_eq, locals=safe_dict)
         
-        # Calculate partial derivatives
+        # Calculate partial derivatives across all axes
         g_x = sp.diff(my_function, x)
         g_y = sp.diff(my_function, y)
         g_z = sp.diff(my_function, z)
@@ -123,9 +76,9 @@ try:
         z_mesh_func = sp.lambdify((x, y), flattened_function, 'numpy')
 
     elif op == "Divergence (∇ · F)":
-        f_x = sp.sympify(eq_x, locals=safe_dict, convert_xor=True)
-        f_y = sp.sympify(eq_y, locals=safe_dict, convert_xor=True)
-        f_z = sp.sympify(eq_z, locals=safe_dict, convert_xor=True)
+        f_x = sp.sympify(eq_x, locals=safe_dict)
+        f_y = sp.sympify(eq_y, locals=safe_dict)
+        f_z = sp.sympify(eq_z, locals=safe_dict)
         
         d_x = sp.diff(f_x, x)
         d_y = sp.diff(f_y, y)
@@ -146,9 +99,9 @@ try:
         z_mesh_func = sp.lambdify((x, y), flattened_function, 'numpy')
 
     elif op == "Curl (∇ × F)":
-        f_x = sp.sympify(eq_x, locals=safe_dict, convert_xor=True)
-        f_y = sp.sympify(eq_y, locals=safe_dict, convert_xor=True)
-        f_z = sp.sympify(eq_z, locals=safe_dict, convert_xor=True)
+        f_x = sp.sympify(eq_x, locals=safe_dict)
+        f_y = sp.sympify(eq_y, locals=safe_dict)
+        f_z = sp.sympify(eq_z, locals=safe_dict)
         
         c_x = sp.diff(f_z, y) - sp.diff(f_y, z)
         c_y = sp.diff(f_x, z) - sp.diff(f_z, x)
@@ -203,4 +156,14 @@ try:
     
     my_plot.update_layout(
         scene=dict(
-            xaxis=dict(title='X Axis', backgroundcolor="white", gridcolor="lightgray"))
+            xaxis=dict(title='X Axis', backgroundcolor="white", gridcolor="lightgray"),
+            yaxis=dict(title='Y Axis', backgroundcolor="white", gridcolor="lightgray"),
+            zaxis=dict(title='Z Axis', backgroundcolor="white", gridcolor="lightgray"),
+            aspectmode='cube'
+        ),
+        margin=dict(l=0, r=0, b=0, t=10), height=700
+    )
+    st.plotly_chart(my_plot, use_container_width=True)
+
+except Exception as math_parse_error:
+    st.error(f"❌ Input Equation Syntax Error. Remember to use standard terms like 'exp()' for exponents, '*' for multiplication (e.g. 2*x) and '**' for powers (e.g. x**2). Technical Details: {math_parse_error}")
