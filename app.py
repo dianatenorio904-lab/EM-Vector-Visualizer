@@ -188,4 +188,4 @@ if submit_button:
     
     # Inject marker dot
     my_plot.add_trace(go.Scatter3d(
-        x=[val_x], y=[val_y], z=[val_z], mode='markers',
+        x=[val_x], y=[val_y], z=[val_z], mode='markers'
