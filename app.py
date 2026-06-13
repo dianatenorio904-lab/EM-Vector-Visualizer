@@ -42,7 +42,7 @@ safe_dict = {
 }
 
 try:
-    # --- MATH COMPILATION PIPELINE ---
+   
     if op == "Gradient (∇f)":
         my_function = sp.sympify(user_eq, locals=safe_dict)
         g_x = sp.diff(my_function, x)
